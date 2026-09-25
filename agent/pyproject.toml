@@ -77,6 +77,10 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
+    # Copied verbatim from the model-training assets; must stay byte-identical
+    "demo_assets",
+    "agent/forecast/features.py",
+    "agent/forecast/postprocess.py",
 ]
 
 # Same as Black.
@@ -145,6 +149,9 @@ exclude = """(?x)(
     | e2e/
     | tests/
     | build/
+    | demo_assets/
+    | agent/forecast/features[.]py
+    | agent/forecast/postprocess[.]py
   )"""
 check_untyped_defs = true
 disallow_any_generics = true
@@ -163,6 +170,11 @@ warn_redundant_casts = true
 warn_return_any = true
 warn_unused_configs = true
 warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+# verbatim copies of the training-time logic (untyped by design)
+module = ["agent.forecast.features", "agent.forecast.postprocess"]
+ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "datarobot.*"

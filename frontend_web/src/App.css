@@ -3,3 +3,33 @@
 @import 'tailwindcss';
 /*---break---*/
 @import './theme/preset.css';
+
+/* Executive summary: print (PDF) only the preview */
+@media print {
+  .print-hidden,
+  .forecast-app footer {
+    display: none !important;
+  }
+  .forecast-app,
+  .forecast-app main {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .summary-print {
+    border: none !important;
+    padding: 0 !important;
+  }
+}
+
+/* Summary preview and chat panel: let wide tables wrap instead of overlapping */
+.summary-print table,
+.forecast-app aside table {
+  table-layout: auto !important;
+}
+.summary-print th,
+.summary-print td,
+.forecast-app aside th,
+.forecast-app aside td {
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}

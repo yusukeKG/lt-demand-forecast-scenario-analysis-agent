@@ -12,9 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import asyncio
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
+
+# Before any agent module is imported: no DataRobot calls, no writes to <repo>/.data
+os.environ["FORECAST_DISABLE_WARMUP"] = "1"
 from ag_ui.core import (
     EventType,
     RunFinishedEvent,
@@ -65,3 +69,10 @@ def load_model_result():
         event_loop = asyncio.new_event_loop()
         thread_pool_executor.submit(asyncio.set_event_loop, event_loop).result()
         yield (thread_pool_executor, event_loop)
+
+
+@pytest.fixture(autouse=True)
+def _no_forecast_warmup(tmp_path, monkeypatch):
+    """Keep tests away from DataRobot and from the real <repo>/.data store."""
+    monkeypatch.setenv("FORECAST_STORE_PATH", str(tmp_path / "forecast_store.sqlite"))
+    monkeypatch.setattr("agent.forecast.warmup.start_background_warmup", lambda: None)

@@ -1,0 +1,24 @@
+{
+  "_comment": [
+    "このファイルをコピーして deployments.json を作り、<...> を実際のIDに置き換えてください（または build_and_deploy.py を実行すると自動で作成されます）。",
+    "機種のキー: general=一般建機 / mini=ミニショベル / mining=鉱山機械。ここにない機種は、画面で「準備中」と表示されます。",
+    "deployment_id（必須）: 予測と予測の説明のリクエスト先。ないと、その機種は「準備中」扱いになり予測されません。ランタイムパラメータ DEPLOYMENT_ID_GENERAL / DEPLOYMENT_ID_MINI / DEPLOYMENT_ID_MINING があれば、そちらが優先されます。",
+    "project_id・model_id（推奨）: (1) 予測の幅（P10〜P90）に使うホールドアウト期間の誤差の取得、(2) 予測の説明が使えないときの予備としての「特徴量のインパクト」の取得に使います。ないと予測はできますが、予測の幅は既定の誤差率（5年あたり 一般建機25%・ミニショベル10%・鉱山機械22%）で計算され、予備の要因分解は使えません。",
+    "このファイルは build_and_deploy.py が作成・更新します。実際のIDが入った deployments.json は Git の管理対象外（.gitignore）です。"
+  ],
+  "general": {
+    "project_id": "<project_id>",
+    "model_id": "<model_id>",
+    "deployment_id": "<deployment_id>"
+  },
+  "mini": {
+    "project_id": "<project_id>",
+    "model_id": "<model_id>",
+    "deployment_id": "<deployment_id>"
+  },
+  "mining": {
+    "project_id": "<project_id>",
+    "model_id": "<model_id>",
+    "deployment_id": "<deployment_id>"
+  }
+}

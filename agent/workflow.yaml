@@ -26,17 +26,16 @@ general:
     # If you don't want your agent to expose A2A endpoints, remove the following block.
     a2a:
       server:
-        name: Blog Content Writer
-        description: An AI content writing agent that researches and writes well-structured blog posts. Provide a topic and
-          it will generate a concise, publication-ready article in markdown format.
+        name: 建機 長期需要予測・シナリオ分析エージェント
+        description: 世界の建機需要（一般建機・ミニショベル・鉱山機械）を10地域区分で2050年まで見通し、シナリオ比較・要因分解・人による前提補正・経営会議サマリーを支援する（需要実績は架空のダミーデータ）。
       skills:  # Optional: advertise specific skills in the agent card
-        - id: write_blog
-          name: Write Blog Post
-          description: Researches and writes a blog post on the given topic.
+        - id: long_term_demand_forecast
+          name: 長期需要予測とシナリオ分析
+          description: シナリオ別の2050年までの需要予測、what-if、要因分解、違和感の指摘と人による補正の記録を行う。
           tags: []
           examples:
-            - Write a blog post about the future of AI in healthcare
-            - Create an article about sustainable energy trends
+            - ベースシナリオで2050年までの世界の建機需要の見通しを見せて
+            - 脱炭素加速シナリオだと鉱山機械の需要はどう変わる？ベースと比べて
             # Optional: Okta cross-application access (XAA) authentication for this agent's A2A endpoints.
             # Uncomment to advertise XAA requirements on the agent card. See docs/agent/agent2agent-auth.md.
             # cross_application_access:
@@ -64,7 +63,7 @@ functions:
   langgraph_agent:
     _type: langgraph_agent
     llm_name: datarobot_llm
-    description: LangGraph planner/writer agent
+    description: Long-term construction machinery demand forecast agent
     # tool_names:
     #   - remote_agent
 llms:
@@ -92,7 +91,7 @@ workflow:
   inner_agent_name: langgraph_agent
   memory_name: mem0_memory
   llm_name: datarobot_llm
-  description: LangGraph planner/writer agent with automatic memory capture and retrieval
+  description: Long-term construction machinery demand forecast agent with automatic memory capture and retrieval
   middleware: [datarobot_moderation, datarobot_otel_conventions]
 middleware:
   datarobot_moderation:

@@ -24,9 +24,16 @@ from nat.cli.register_workflow import register_per_user_function
 from nat.data_models.agent import AgentBaseConfig
 from nat.data_models.component_ref import FunctionGroupRef
 
+from agent.forecast.warmup import start_background_warmup
+
 # INSTRUMENTATION CALL IS REQUIRED TO SETUP TRACING AND TELEMETRY FOR AGENTS
 instrument()
 instrument_langgraph()
+
+# Base forecasts for the 4 scenarios are computed when the agent process starts
+# (background thread), so the dashboard has data before the first chat message.
+# The function below is per-user and only built on a user's first request.
+start_background_warmup()
 
 
 class LanggraphAgentConfig(AgentBaseConfig, name="langgraph_agent"):  # type: ignore[call-arg, misc]

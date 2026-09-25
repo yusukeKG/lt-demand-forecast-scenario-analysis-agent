@@ -70,7 +70,7 @@ export const saveLanguage = (language: string) => {
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: getSavedLanguage() || 'en',
+  lng: getSavedLanguage() || 'ja',
   fallbackLng: 'en',
   interpolation: {
     escapeValue: false,

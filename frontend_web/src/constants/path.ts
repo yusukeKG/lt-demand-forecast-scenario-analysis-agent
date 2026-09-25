@@ -5,4 +5,12 @@ export const PATHS = {
   SETTINGS: {
     ROOT: '/settings',
   },
+  FORECAST: {
+    DASHBOARD: '/dashboard',
+    SCENARIOS: '/scenarios',
+    DRIVERS: '/drivers',
+    BACKTEST: '/backtest',
+    HILP: '/adjustments',
+    SUMMARY: '/summary',
+  },
 } as const;

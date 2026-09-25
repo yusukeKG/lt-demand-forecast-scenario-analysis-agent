@@ -1,0 +1,39 @@
+﻿iso3,country_ja,country_en,region,res_copper,res_ironore,res_gold,sub_region
+JPN,日本,Japan,日本,0,0,0,日本
+USA,米国,United States,北米,1,1,1,北米
+CAN,カナダ,Canada,北米,1,1,2,北米
+BRA,ブラジル,Brazil,中南米,1,3,1,中南米
+MEX,メキシコ,Mexico,中南米,1,0,1,中南米
+CHL,チリ,Chile,中南米,3,1,0,中南米
+PER,ペルー,Peru,中南米,3,1,2,中南米
+COL,コロンビア,Colombia,中南米,0,0,1,中南米
+ARG,アルゼンチン,Argentina,中南米,0,0,1,中南米
+DEU,ドイツ,Germany,欧州,0,0,0,欧州
+FRA,フランス,France,欧州,0,0,0,欧州
+GBR,英国,United Kingdom,欧州,0,0,0,欧州
+ITA,イタリア,Italy,欧州,0,0,0,欧州
+ESP,スペイン,Spain,欧州,0,0,0,欧州
+POL,ポーランド,Poland,欧州,1,0,0,欧州
+SWE,スウェーデン,Sweden,欧州,0,1,0,欧州
+RUS,ロシア,Russia,CIS,1,1,2,CIS
+KAZ,カザフスタン,Kazakhstan,CIS,2,1,1,CIS
+UZB,ウズベキスタン,Uzbekistan,CIS,1,0,3,CIS
+CHN,中国,China,中国,1,2,1,中国
+IDN,インドネシア,Indonesia,アジア,1,0,1,アジア（インド除く）
+IND,インド,India,アジア,0,2,0,アジア（インド）
+THA,タイ,Thailand,アジア,0,0,0,アジア（インド除く）
+VNM,ベトナム,Viet Nam,アジア,0,0,0,アジア（インド除く）
+PHL,フィリピン,Philippines,アジア,1,0,1,アジア（インド除く）
+MYS,マレーシア,Malaysia,アジア,0,0,0,アジア（インド除く）
+AUS,オーストラリア,Australia,オセアニア,1,3,2,オセアニア
+NZL,ニュージーランド,New Zealand,オセアニア,0,0,0,オセアニア
+SAU,サウジアラビア,Saudi Arabia,中近東,0,0,0,中近東
+ARE,アラブ首長国連邦,United Arab Emirates,中近東,0,0,0,中近東
+TUR,トルコ,Turkiye,中近東,0,0,1,中近東
+ZAF,南アフリカ,South Africa,アフリカ,1,2,2,アフリカ
+NGA,ナイジェリア,Nigeria,アフリカ,0,0,0,アフリカ
+EGY,エジプト,Egypt,アフリカ,0,0,0,アフリカ
+KEN,ケニア,Kenya,アフリカ,0,0,0,アフリカ
+GHA,ガーナ,Ghana,アフリカ,0,0,3,アフリカ
+COD,コンゴ民主共和国,DR Congo,アフリカ,3,0,1,アフリカ
+ZMB,ザンビア,Zambia,アフリカ,3,0,0,アフリカ

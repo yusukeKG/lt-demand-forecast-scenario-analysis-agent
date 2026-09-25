@@ -53,7 +53,13 @@ export interface ChatPageContentProps {
   addChatHandler: () => void;
 }
 
-export function ChatImplementation({ chatId }: { chatId: string }) {
+export function ChatImplementation({
+  chatId,
+  greeting = initialMessages,
+}: {
+  chatId: string;
+  greeting?: MessageResponse[];
+}) {
   const {
     sendTextMessage,
     userInput,
@@ -103,7 +109,7 @@ export function ChatImplementation({ chatId }: { chatId: string }) {
   // });
 
   return (
-    <Chat initialMessages={initialMessages}>
+    <Chat initialMessages={greeting}>
       <ScrollArea
         className="mb-5 min-h-0 w-full flex-1"
         scrollViewportRef={scrollContainerRef}
