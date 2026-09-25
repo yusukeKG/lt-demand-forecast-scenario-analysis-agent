@@ -377,3 +377,123 @@ def test_deployments_files_parse(tmp_path, monkeypatch):
     assert list(deps) == ["mini"] and deps["mini"]["deployment_id"] == "d1"
     monkeypatch.setenv("DEPLOYMENT_ID_GENERAL", "env-id")
     assert data.load_deployments()["general"]["deployment_id"] == "env-id"
+
+
+# ---------------------------------------------------------------- DataRobot-hosted store (deployed mode)
+class FakeDataRobot:
+    """Minimal stand-in for the Files API + Key-Value API used by remote_store."""
+
+    def __init__(self):
+        self.files: dict[str, bytes] = {}
+        self.kv: dict[tuple[str, str], "FakeDataRobot.KV"] = {}
+        outer = self
+
+        class KV:
+            def __init__(self, entity_id, name, value):
+                self.entity_id, self.name, self.value = entity_id, name, value
+
+            def update(self, value=None, **_):
+                self.value = value
+
+            @staticmethod
+            def find(entity_id, entity_type, name):
+                return outer.kv.get((entity_id, name))
+
+            @staticmethod
+            def create(
+                entity_id,
+                entity_type,
+                name,
+                category,
+                value_type,
+                value,
+                description=None,
+            ):
+                outer.kv[(entity_id, name)] = KV(entity_id, name, value)
+                return outer.kv[(entity_id, name)]
+
+        self.KV = KV
+
+    # client API
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def post(self, url, files=None, data=None, timeout=None):
+        cid = f"cat{len(self.files) + 1}"
+        self.files[cid] = files["file"][1].read()
+        return type("R", (), {"json": lambda _self: {"catalogId": cid}})()
+
+    def get(self, url, timeout=None):
+        cid = url.split("/")[1]
+        return type("R", (), {"content": self.files[cid]})()
+
+    def delete(self, url):
+        self.files.pop(url.split("/")[1], None)
+
+
+@pytest.fixture
+def fake_dr(monkeypatch):
+    import datarobot as dr
+
+    from agent.forecast import remote_store
+
+    fake = FakeDataRobot()
+    monkeypatch.setattr(remote_store, "_client", lambda: fake)
+    monkeypatch.setattr(dr, "KeyValue", fake.KV)
+    return fake
+
+
+def test_remote_sync_push_and_pull(tmp_path, fake_dr, mocked_dr):
+    from agent.forecast.remote_store import DataRobotStoreSync
+
+    local = tmp_path / "a" / "forecast_store.sqlite"
+    sync = DataRobotStoreSync("dep-agent", local, background=False)
+    st = ForecastStore(local, sync=sync)
+    engine.run_forecast("S1_BASE", store=st)
+    st.add_adjustment({"log_id": "adj-1", "timestamp": "t", "adjusted_by": "経営管理部", "region": "アフリカ",
+                       "category": "general", "factor": 0.7, "start_year": 2026, "ramp_years": 5,
+                       "rationale": "理由", "base_run_id": "base-S1_BASE", "new_run_id": "run-x"})  # fmt: skip
+    assert sync.flush()
+    assert len(fake_dr.files) == 1, "old store files are deleted after each push"
+    # a new container (fresh working copy) restores everything from DataRobot
+    other = tmp_path / "b" / "forecast_store.sqlite"
+    restored = ForecastStore(
+        other, sync=DataRobotStoreSync("dep-agent", other, background=False)
+    )
+    assert restored.get_run("base-S1_BASE") is not None
+    assert restored.adjustment_log()[0]["rationale"] == "理由"
+
+
+def test_store_mode_switches_on_deployment_env(monkeypatch, tmp_path, fake_dr):
+    from agent.forecast import remote_store, store
+
+    monkeypatch.delenv("FORECAST_STORE_PATH", raising=False)
+    monkeypatch.delenv("MLOPS_DEPLOYMENT_ID", raising=False)
+    monkeypatch.delenv("FORECAST_STORE_DEPLOYMENT_ID", raising=False)
+    assert store.default_store_path().name == "forecast_store.sqlite"
+    assert ".data" in str(store.default_store_path())  # local checkout
+    monkeypatch.setenv("MLOPS_DEPLOYMENT_ID", "dep-agent")
+    monkeypatch.setattr(
+        remote_store,
+        "remote_local_path",
+        lambda: tmp_path / "rt" / "forecast_store.sqlite",
+    )
+    monkeypatch.setattr(
+        store, "remote_local_path", lambda: tmp_path / "rt" / "forecast_store.sqlite"
+    )
+    monkeypatch.setattr(store, "_store", None)
+    s = store.get_store()
+    assert s.sync is not None and s.sync.deployment_id == "dep-agent"
+    s.sync.background = False  # never let a test thread reach the real DataRobot
+    assert s.path == tmp_path / "rt" / "forecast_store.sqlite"
+
+
+def test_runtime_param_deployment_ids(monkeypatch):
+    monkeypatch.setenv(
+        "MLOPS_RUNTIME_PARAM_DEPLOYMENT_ID_MINING",
+        json.dumps({"type": "string", "payload": "rt-mining"}),
+    )
+    assert data.load_deployments()["mining"]["deployment_id"] == "rt-mining"

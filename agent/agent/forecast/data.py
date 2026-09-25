@@ -4,7 +4,6 @@ All CSVs live in ``agent/demo_assets/data`` so they ship with the agent bundle.
 """
 
 import json
-import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -152,6 +151,14 @@ def lever_defaults(scenario_id: str) -> dict[str, Any]:
     }
 
 
+def runtime_param(name: str) -> str | None:
+    """Env var or DataRobot runtime parameter (``MLOPS_RUNTIME_PARAM_<name>``)."""
+    from datarobot.core.config import getenv
+
+    value = getenv(name)
+    return None if value is None else str(value)
+
+
 def load_deployments() -> dict[str, dict[str, Any]]:
     """Deployment info per category.
 
@@ -166,7 +173,7 @@ def load_deployments() -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     for slug in CATEGORIES:
         info = dict(raw.get(slug, {}))
-        env_id = os.environ.get(f"DEPLOYMENT_ID_{slug.upper()}", "").strip()
+        env_id = (runtime_param(f"DEPLOYMENT_ID_{slug.upper()}") or "").strip()
         if env_id and env_id != "SET_VIA_PULUMI_OR_MANUALLY":
             info["deployment_id"] = env_id
         dep_id = str(info.get("deployment_id", ""))

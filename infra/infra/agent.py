@@ -479,6 +479,20 @@ agent_runtime_parameter_values: list[
     pulumi_datarobot.CustomModelRuntimeParameterValueArgs
 ] = [] + llm_custom_model_runtime_parameters + get_mcp_custom_model_runtime_parameters()
 
+# Demand forecast models used by the agent's tools. Optional: without them the agent
+# reads agent/demo_assets/deployments.json (bundled with the agent).
+for _forecast_param in (
+    "DEPLOYMENT_ID_GENERAL",
+    "DEPLOYMENT_ID_MINI",
+    "DEPLOYMENT_ID_MINING",
+):
+    if _forecast_value := os.environ.get(_forecast_param, "").strip():
+        agent_runtime_parameter_values.append(
+            pulumi_datarobot.CustomModelRuntimeParameterValueArgs(
+                key=_forecast_param, type="string", value=_forecast_value
+            )
+        )
+
 # DRUM runtime parameters for concurrency configuration
 agent_runtime_parameter_values.extend(
     [

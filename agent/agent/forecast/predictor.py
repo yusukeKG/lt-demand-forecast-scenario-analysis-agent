@@ -32,16 +32,21 @@ class PredictionError(RuntimeError):
 
 def sanitize(text: str) -> str:
     """Remove anything that looks like a credential from an error message."""
-    token = os.environ.get("DATAROBOT_API_TOKEN", "")
+    from datarobot.core.config import getenv
+
+    token = getenv("DATAROBOT_API_TOKEN") or os.environ.get("DATAROBOT_API_TOKEN", "")
     if token:
         text = text.replace(token, "***")
     text = re.sub(r"(?i)(bearer|token)(\s*(of)?\s*[\"':= ]\s*)\S+", r"\1\2***", text)
     return re.sub(r"[A-Za-z0-9+/=_-]{40,}", "***", text)
 
 
-def _credentials() -> tuple[str, str]:
-    endpoint = os.environ.get("DATAROBOT_ENDPOINT", "").rstrip("/")
-    token = os.environ.get("DATAROBOT_API_TOKEN", "")
+def credentials() -> tuple[str, str]:
+    """(endpoint, token) from env vars or DataRobot runtime parameters."""
+    from datarobot.core.config import getenv
+
+    endpoint = (getenv("DATAROBOT_ENDPOINT") or "").rstrip("/")
+    token = getenv("DATAROBOT_API_TOKEN") or ""
     if not endpoint or not token:
         raise PredictionError(
             "DataRobot の接続情報（エンドポイント／APIキー）が設定されていません"
@@ -52,7 +57,7 @@ def _credentials() -> tuple[str, str]:
 def _post(
     deployment_id: str, frame: pd.DataFrame, params: dict[str, Any]
 ) -> list[dict[str, Any]]:
-    endpoint, token = _credentials()
+    endpoint, token = credentials()
     buf = io.StringIO()
     frame.to_csv(buf, index=False)
     try:
@@ -139,7 +144,7 @@ def explain(
 def _sdk_client() -> Any:
     import datarobot as dr
 
-    endpoint, token = _credentials()
+    endpoint, token = credentials()
     return dr.Client(token=token, endpoint=endpoint)
 
 

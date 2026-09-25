@@ -77,7 +77,7 @@ flowchart LR
 | エージェント（[agent/](agent/)） | LangGraph のエージェントと 11 種のツール。予測の計算・DataRobot 呼び出し・違和感の検知・補正はすべてここで行います |
 | バックエンド（[fastapi_server/](fastapi_server/)） | チャットの中継と、共有ストアを読み取る API（`/api/v1/forecast/*`）。予測の計算はしません |
 | 画面（[frontend_web/](frontend_web/)） | React + Vite + Tailwind CSS。6 ページとチャットパネル |
-| 共有ストア | 予測（run）、結果、判断履歴、画面用のデータを保存する SQLite ファイル（`.data/forecast_store.sqlite`） |
+| 共有ストア | 予測（run）、結果、判断履歴、画面用のデータを保存する SQLite ファイル。ローカルでは `.data/forecast_store.sqlite`、デプロイ後は DataRobot 上に保存 |
 
 - LLM は DataRobot LLM Gateway 経由でのみ呼び出します（既定のモデルは `anthropic/claude-sonnet-5`）。外部プロバイダの API キーは使いません。
 - 起動時に 4 シナリオのベース予測を計算してキャッシュします。予測リクエストに失敗したときは、キャッシュの結果で表示を続けます。
@@ -176,15 +176,20 @@ DataRobot 上でモデルの学習が走るため、時間とリソースを消�
 > デプロイの仕組み（Pulumi）や出力の見方、トラブルシューティングは
 > [DataRobot Agentic Starter の README](https://github.com/datarobot-community/datarobot-agent-application#deploy-your-agent) を参照してください。
 
-> [!WARNING]
-> **現在はローカル実行のみ動作確認しています。** デプロイ後はエージェントとアプリが別のコンテナで動くため、
-> ローカル用の共有ストア（SQLite ファイル）を共有できません。DataRobot 上のストレージへ切り替える対応が必要です（未対応）。
+`dr run dev` で確認した状態のまま、ファイルを編集せずに `dr run deploy` でデプロイできます。
+共有ストアの保存先は実行環境に応じて自動で切り替わります。
+
+| 実行環境 | 共有ストアの保存先 |
+|---|---|
+| `dr run dev` | ローカルの `.data/forecast_store.sqlite` |
+| `dr run deploy` | DataRobot 上（エージェントのデプロイに紐づく Files API と Key-Value）。エージェントが書き込み、アプリが読み取ります |
 
 デプロイ前に、`.env` に次の値が設定されていることを確認してください。
 
 - `DATAROBOT_API_TOKEN`、`DATAROBOT_ENDPOINT`
 - `PULUMI_CONFIG_PASSPHRASE`
 - `SESSION_SECRET_KEY`
+- （任意）`DEPLOYMENT_ID_GENERAL` / `DEPLOYMENT_ID_MINI` / `DEPLOYMENT_ID_MINING`：設定すると、デプロイしたエージェントに渡されます。未設定なら `agent/demo_assets/deployments.json` が使われます
 
 ```sh
 dr run deploy

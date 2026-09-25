@@ -149,6 +149,17 @@ tasks:
     cmds:
       - "{{.UV_CMD}} run pulumi stack select {{.CLI_ARGS}}"
 
+  stack-ensure:
+    # Hidden helper: select (or create) the stack named by PULUMI_STACK_NAME in .env so that
+    # deploy/refresh/destroy never prompt for a stack and never pick another app's stack.
+    silent: true
+    cmds:
+      - |
+        if [ -n "${PULUMI_STACK_NAME:-}" ]; then
+          {{.UV_CMD}} run pulumi stack select --create "$PULUMI_STACK_NAME" >/dev/null
+          echo "📦 Pulumi stack: $PULUMI_STACK_NAME"
+        fi
+
   up:
     silent: true
     aliases:
@@ -158,6 +169,7 @@ tasks:
       - auth-check
     cmds:
       - task: pulumi-datarobot-plugin-check
+      - task: stack-ensure
       - echo "🔨 Deploying the infrastructure.."
       - "{{.UV_CMD}} run pulumi up {{.CLI_ARGS}}"
 
@@ -168,6 +180,7 @@ tasks:
       - auth-check
     cmds:
       - task: pulumi-datarobot-plugin-check
+      - task: stack-ensure
       - echo "🔨 Deploying the infrastructure (non-interactive).."
       - "{{.UV_CMD}} run pulumi up -y {{.CLI_ARGS}}"
 
@@ -178,6 +191,7 @@ tasks:
       - auth-check
     cmds:
       - task: pulumi-datarobot-plugin-check
+      - task: stack-ensure
       - echo "🔄 Refreshing the infrastructure.."
       - "{{.UV_CMD}} run pulumi refresh {{.CLI_ARGS}}"
 
@@ -204,6 +218,7 @@ tasks:
       - auth-check
     cmds:
       - task: pulumi-datarobot-plugin-check
+      - task: stack-ensure
       - echo "💥 Destroying the infrastructure.."
       - "{{.UV_CMD}} run pulumi destroy {{.CLI_ARGS}}"
 
@@ -214,6 +229,7 @@ tasks:
       - auth-check
     cmds:
       - task: pulumi-datarobot-plugin-check
+      - task: stack-ensure
       - echo "💥 Destroying the infrastructure (non-interactive).."
       - "{{.UV_CMD}} run pulumi destroy -y {{.CLI_ARGS}}"
 

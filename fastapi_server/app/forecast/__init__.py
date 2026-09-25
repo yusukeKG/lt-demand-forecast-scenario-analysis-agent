@@ -2,8 +2,11 @@
 
 The agent writes runs, results, issues, bands, explanations, the adjustment log
 and reference data into a SQLite file (see agent/agent/forecast/store.py). The
-backend only reads it, so it never needs the forecast engine or DataRobot calls.
-Location: ``FORECAST_STORE_PATH`` or ``<repo>/.data/forecast_store.sqlite``.
+backend only reads it, so it never needs the forecast engine.
+
+- Local (``dr run dev``): ``FORECAST_STORE_PATH`` or ``<repo>/.data/forecast_store.sqlite``.
+- Deployed (``dr run deploy``): a mirror of the file the agent publishes to
+  DataRobot (see ``remote``). Selected automatically.
 """
 
 import json
@@ -113,4 +116,8 @@ class ForecastStoreReader:
 
 
 def get_reader() -> ForecastStoreReader:
-    return ForecastStoreReader()
+    from app.forecast.remote import remote_store_path
+
+    if os.environ.get("FORECAST_STORE_PATH", "").strip():
+        return ForecastStoreReader()
+    return ForecastStoreReader(remote_store_path())

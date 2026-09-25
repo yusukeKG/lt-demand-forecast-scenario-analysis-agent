@@ -2,9 +2,10 @@
 
 The store is the contract between the agent (writer) and the FastAPI backend
 (reader): the backend never imports agent code, it reads this SQLite file.
-Location: ``FORECAST_STORE_PATH`` or ``<repo>/.data/forecast_store.sqlite``.
-Keep all access behind ``ForecastStore`` so a DataRobot-hosted backend can
-replace SQLite for deployments.
+
+- Local (``dr run dev``): ``FORECAST_STORE_PATH`` or ``<repo>/.data/forecast_store.sqlite``.
+- Deployed (``dr run deploy``): a working copy in the temp dir, pulled from and
+  pushed to DataRobot (see ``remote_store``). Selected automatically.
 """
 
 import json
@@ -18,6 +19,12 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+from agent.forecast.remote_store import (
+    DataRobotStoreSync,
+    remote_local_path,
+    store_deployment_id,
+)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -80,6 +87,8 @@ def default_store_path() -> Path:
     env = os.environ.get("FORECAST_STORE_PATH", "").strip()
     if env:
         return Path(env)
+    if store_deployment_id():
+        return remote_local_path()
     here = Path(__file__).resolve()
     # local checkout: <repo>/agent/agent/forecast/store.py -> <repo>/.data
     repo = here.parents[3]
@@ -93,12 +102,22 @@ def now_iso() -> str:
 
 
 class ForecastStore:
-    def __init__(self, path: Path | None = None) -> None:
+    def __init__(
+        self, path: Path | None = None, sync: DataRobotStoreSync | None = None
+    ) -> None:
         self.path = Path(path) if path else default_store_path()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
+        self.sync = sync
+        # the first worker process in the container restores the stored copy
+        if sync and not self.path.exists():
+            sync.pull()
         with self._conn() as c:
             c.executescript(SCHEMA)
+
+    def _written(self) -> None:
+        if self.sync:
+            self.sync.schedule_push()
 
     @contextmanager
     def _conn(self) -> Iterator[sqlite3.Connection]:
@@ -151,6 +170,7 @@ class ForecastStore:
                     index=False, name=None
                 ),
             )
+        self._written()
 
     def _decode_run(self, r: sqlite3.Row) -> dict[str, Any]:
         d = dict(r)
@@ -186,6 +206,7 @@ class ForecastStore:
                 f"INSERT INTO adjustment_log ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
                 [entry[k] for k in cols],
             )
+        self._written()
 
     def adjustment_log(self) -> list[dict[str, Any]]:
         with self._conn() as c:
@@ -201,6 +222,7 @@ class ForecastStore:
                 "INSERT OR REPLACE INTO kv (key, value, updated_at) VALUES (?, ?, ?)",
                 (key, json.dumps(value, ensure_ascii=False, default=float), now_iso()),
             )
+        self._written()
 
     def get(self, key: str, default: Any = None) -> Any:
         with self._conn() as c:
@@ -216,5 +238,11 @@ def get_store() -> ForecastStore:
     global _store
     with _store_lock:
         if _store is None or _store.path != default_store_path():
-            _store = ForecastStore()
+            dep = store_deployment_id()
+            sync = (
+                DataRobotStoreSync(dep, remote_local_path())
+                if dep and not os.environ.get("FORECAST_STORE_PATH")
+                else None
+            )
+            _store = ForecastStore(sync=sync)
         return _store

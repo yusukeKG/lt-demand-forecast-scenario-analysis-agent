@@ -134,3 +134,55 @@ def test_reference_not_ready(authenticated_client: TestClient, tmp_path: Path) -
 
 def test_requires_auth(client: TestClient) -> None:
     assert client.get("/api/v1/forecast/runs").status_code in (401, 403)
+
+
+def test_remote_mode_only_when_deployed(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.forecast import remote
+
+    monkeypatch.delenv("FORECAST_STORE_DEPLOYMENT_ID", raising=False)
+    monkeypatch.delenv("APPLICATION_ID", raising=False)
+    monkeypatch.setenv("AGENT_DEPLOYMENT_ID", "6a0000000000000000000001")
+    assert (
+        remote.store_deployment_id() is None
+    )  # local dev, even with Pulumi outputs in .env
+    monkeypatch.setenv("APPLICATION_ID", "app-1")
+    assert remote.store_deployment_id() == "6a0000000000000000000001"
+
+
+def test_remote_mirror_downloads_published_store(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import datarobot as dr
+
+    from app.forecast import remote
+
+    src = tmp_path / "published.sqlite"
+    _seed(src)
+
+    class KV:
+        value = json.dumps({"catalog_id": "cat1", "version": 1.0})
+
+        @staticmethod
+        def find(entity_id: str, entity_type: Any, name: str) -> Any:
+            assert (entity_id, name) == ("dep-agent", "forecast_store")
+            return KV
+
+    class Client:
+        def __enter__(self) -> "Client":
+            return self
+
+        def __exit__(self, *a: Any) -> None:
+            return None
+
+        def get(self, url: str, timeout: Any = None) -> Any:
+            assert url == "files/cat1/file/"
+            return type("R", (), {"content": src.read_bytes()})()
+
+    monkeypatch.setattr(dr, "KeyValue", KV)
+    monkeypatch.setattr(remote.tempfile, "gettempdir", lambda: str(tmp_path))
+    cache = remote.RemoteStoreCache("dep-agent")
+    monkeypatch.setattr(cache, "_dr", lambda: Client())
+    path = cache.refresh()
+    reader = ForecastStoreReader(path)
+    assert reader.get_run("base-S1_BASE") is not None
+    assert reader.adjustment_log()[0]["adjusted_by"] == "経営管理部"
