@@ -497,3 +497,24 @@ def test_runtime_param_deployment_ids(monkeypatch):
         json.dumps({"type": "string", "payload": "rt-mining"}),
     )
     assert data.load_deployments()["mining"]["deployment_id"] == "rt-mining"
+
+
+def test_forked_worker_does_not_inherit_held_locks():
+    """gunicorn forks workers while the master's warmup thread holds these locks."""
+    import os
+
+    from agent.forecast import store as store_mod
+    from agent.forecast import warmup
+
+    with store_mod._store_lock, warmup._lock:
+        pid = os.fork()
+        if pid == 0:  # child: the at-fork hooks must have replaced the held locks
+            ok = (
+                store_mod._store_lock.acquire(timeout=2)
+                and warmup._lock.acquire(timeout=2)
+                and not warmup._started
+                and not warmup._done.is_set()
+            )
+            os._exit(0 if ok else 1)
+        _, status = os.waitpid(pid, 0)
+    assert os.waitstatus_to_exitcode(status) == 0

@@ -234,6 +234,18 @@ _store: ForecastStore | None = None
 _store_lock = threading.Lock()
 
 
+def _reset_after_fork() -> None:
+    """Deployed, gunicorn forks its workers after ``register.py`` started the
+    warmup thread in the master. Locks that thread held are copied as held and
+    the thread itself is gone, so each worker starts with fresh state."""
+    global _store, _store_lock
+    _store = None
+    _store_lock = threading.Lock()
+
+
+os.register_at_fork(after_in_child=_reset_after_fork)
+
+
 def get_store() -> ForecastStore:
     global _store
     with _store_lock:

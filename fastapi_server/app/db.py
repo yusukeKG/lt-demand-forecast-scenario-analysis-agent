@@ -83,9 +83,13 @@ class DBCtx:
                     "This session is read-only and cannot perform writes."
                 )
 
-        if self._persistence_fs and self._persistence_fs.exists(self._db_path):
-            db_path = cast(str, self._db_path)
-            self._persistence_fs.get(db_path, db_path)
+        # Wait for any open write session: it has committed locally but not yet
+        # uploaded, so downloading now would overwrite its rows with the previous
+        # copy (the write's refresh then fails and the chat message is lost).
+        async with self._lock:
+            if self._persistence_fs and self._persistence_fs.exists(self._db_path):
+                db_path = cast(str, self._db_path)
+                self._persistence_fs.get(db_path, db_path)
 
         async with self._session() as session:
             event.listen(session.sync_session, "before_flush", prevent_writes)

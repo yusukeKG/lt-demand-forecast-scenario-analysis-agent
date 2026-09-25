@@ -20,6 +20,18 @@ _lock = threading.Lock()
 _done = threading.Event()
 
 
+def _reset_after_fork() -> None:
+    """A forked worker has no warmup thread (see ``store._reset_after_fork``):
+    let it start its own instead of waiting on the master's."""
+    global _started, _lock, _done
+    _started = False
+    _lock = threading.Lock()
+    _done = threading.Event()
+
+
+os.register_at_fork(after_in_child=_reset_after_fork)
+
+
 def reference_payload() -> dict[str, Any]:
     """Static tables the frontend needs (read by the backend from the store)."""
     defs = data.scenario_definitions()
