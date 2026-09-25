@@ -529,7 +529,7 @@ agent_runtime_parameter_values.extend(
 SESSION_SECRET_KEY: Final[str] = "SESSION_SECRET_KEY"
 
 if session_secret_key := os.environ.get(SESSION_SECRET_KEY):
-    pulumi.export(SESSION_SECRET_KEY, session_secret_key)
+    pulumi.export(SESSION_SECRET_KEY, pulumi.Output.secret(session_secret_key))
     session_secret_cred = pulumi_datarobot.ApiTokenCredential(
         agent_asset_name + " Session Secret Key",
         args=pulumi_datarobot.ApiTokenCredentialArgs(api_token=str(session_secret_key)),

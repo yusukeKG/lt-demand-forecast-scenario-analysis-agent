@@ -206,7 +206,7 @@ def get_fastapi_server_app_files(
 
 
 # Start of Pulumi settings and application infrastructure
-pulumi.export("SESSION_SECRET_KEY", session_secret_key)
+pulumi.export("SESSION_SECRET_KEY", pulumi.Output.secret(session_secret_key))
 session_secret_cred = pulumi_datarobot.ApiTokenCredential(
     f"Agentic Application Starter Session Secret Key [{PROJECT_NAME}]",
     args=pulumi_datarobot.ApiTokenCredentialArgs(
@@ -250,8 +250,14 @@ fastapi_server_app_env_name: str = "DATAROBOT_APPLICATION_ID"
 fastapi_server_application_path = project_dir.parent / "fastapi_server"
 
 fastapi_server_app_resource_name: str = f"Agentic Application Starter [{PROJECT_NAME}]"
+# Display name in DataRobot. Set separately so renaming the app does not change
+# the Pulumi resource name (which would replace the app and change its URL).
+fastapi_server_app_display_name: str = (
+    f"長期需要シナリオ分析エージェント [{PROJECT_NAME}]"
+)
 fastapi_server_app_source_args = ApplicationSourceArgs(
     resource_name=fastapi_server_app_resource_name,
+    name=fastapi_server_app_display_name,
     base_environment_id=RuntimeEnvironments.PYTHON_312_APPLICATION_BASE.value.id,
 ).model_dump(mode="json", exclude_none=True)
 
@@ -293,6 +299,7 @@ fastapi_server_app_source = pulumi_datarobot.ApplicationSource(
 
 fastapi_server_app = pulumi_datarobot.CustomApplication(
     resource_name=fastapi_server_app_resource_name,
+    name=fastapi_server_app_display_name,
     source_version_id=fastapi_server_app_source.version_id,
     use_case_ids=[use_case.id],
     allow_auto_stopping=True,

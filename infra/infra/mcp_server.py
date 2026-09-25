@@ -364,7 +364,7 @@ if session_secret_key := os.getenv(SESSION_SECRET_KEY):
             value=session_secret_cred.id,
         )
     )
-    pulumi.export(SESSION_SECRET_KEY, session_secret_key)
+    pulumi.export(SESSION_SECRET_KEY, pulumi.Output.secret(session_secret_key))
 
 
 # Only add optional OTEL parameters if they have values

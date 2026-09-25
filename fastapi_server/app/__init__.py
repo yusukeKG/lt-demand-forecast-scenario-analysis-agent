@@ -121,7 +121,7 @@ def get_manifest_assets(
 
 
 def create_app(
-    title: str = "Agentic Starter",
+    title: str = "長期需要シナリオ分析エージェント",
     config: Config | None = None,
     deps: Deps | None = None,
 ) -> FastAPI:
